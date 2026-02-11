@@ -18,7 +18,6 @@ const shelfSchema = new mongoose.Schema({
     }
 });
 
-// Enforce unique (userId + auditId)
 shelfSchema.index({ userId: 1, auditId: 1 }, { unique: true });
 
 module.exports = mongoose.model('Shelf', shelfSchema);

@@ -11,7 +11,7 @@ const auditSchema = new mongoose.Schema({
         type: mongoose.Schema.ObjectId,
         ref: 'Accountant',
         required: true,
-        index: true // Index for performance
+        index: true
     },
     isActive: {
         type: Boolean,
@@ -27,7 +27,6 @@ const auditSchema = new mongoose.Schema({
     }
 });
 
-// Update updatedOn on save
 auditSchema.pre('save', function (next) {
     this.updatedAt = Date.now();
     next();

@@ -2,7 +2,6 @@ const jwt = require('jsonwebtoken');
 const logger = require('../logger/logger');
 
 const protect = async (req, res, next) => {
-
     let token;
 
     if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
@@ -15,9 +14,8 @@ const protect = async (req, res, next) => {
 
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        req.user = decoded; // { id, role }
+        req.user = decoded;
 
-        // Check version for accountants
         if (req.user.role === 'accountant') {
             const Accountant = require('../../modules/auth/models/accountantModel');
             const accountant = await Accountant.findById(req.user.id);

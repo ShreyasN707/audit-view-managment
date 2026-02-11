@@ -1,12 +1,11 @@
 const logger = require('../logger/logger');
 
 const errorHandler = (err, req, res, next) => {
-    logger.error(err.stack); // Log full stack to file system
+    logger.error(err.stack);
 
     const statusCode = err.statusCode || 500;
     const message = err.message || 'Internal Server Error';
 
-    // Specific handling for known errors if needed
     if (err.name === 'ValidationError') {
         return res.status(400).json({ status: 'fail', message: err.message });
     }

@@ -28,7 +28,7 @@ const PublicDashboard = () => {
     const addToShelf = async (auditId) => {
         try {
             await api.post(`/api/v1/public/shelf/${auditId}`);
-            fetchData(); // Refresh
+            fetchData();
         } catch (error) {
             alert(error.response?.data?.message || 'Error adding to shelf');
         }
@@ -37,7 +37,7 @@ const PublicDashboard = () => {
     const removeFromShelf = async (auditId) => {
         try {
             await api.delete(`/api/v1/public/shelf/${auditId}`);
-            fetchData(); // Refresh
+            fetchData();
         } catch (error) {
             console.error(error);
         }
@@ -71,7 +71,6 @@ const PublicDashboard = () => {
                             <p className="text-sm text-gray-500">By: {audit.createdBy?.username}</p>
                             <p className="text-xs text-gray-400">{new Date(audit.createdAt).toLocaleDateString()}</p>
 
-                            {/* Check if already in shelf */}
                             {shelf.some(s => s.auditId?._id === audit._id) ? (
                                 <span className="mt-2 inline-block text-green-600 text-sm">In Shelf</span>
                             ) : (

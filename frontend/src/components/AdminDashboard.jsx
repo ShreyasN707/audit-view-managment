@@ -4,9 +4,7 @@ import api from '../utils/api';
 const AdminDashboard = () => {
     const [activeTab, setActiveTab] = useState('accountants');
 
-    // Data states
-    const [audits, setAudits] = useState([]);
-    const [logs, setLogs] = useState([]);
+    const [logs, setLogs] = useState('');
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
 
@@ -83,12 +81,13 @@ const AdminDashboard = () => {
             )}
 
             {activeTab === 'logs' && (
-                <div className="bg-gray-900 text-green-400 p-4 rounded shadow overflow-y-auto max-h-96 font-mono text-sm">
-                    {logs.map((log, i) => (
-                        <div key={i} className="mb-1 border-b border-gray-800 pb-1">
-                            <span className="text-gray-500">[{log.timestamp}]</span> <span className="text-yellow-400">{log.level.toUpperCase()}</span>: {log.message}
-                        </div>
-                    ))}
+                <div className="bg-gray-900 text-green-400 rounded shadow overflow-hidden font-mono text-xs border border-gray-700">
+                    <div className="bg-gray-800 p-2 border-b border-gray-700 flex justify-between items-center px-4">
+                        <span className="font-bold text-gray-300">System Logs (Raw)</span>
+                    </div>
+                    <pre className="overflow-y-auto max-h-96 p-4 whitespace-pre-wrap break-all">
+                        {logs || "No logs found."}
+                    </pre>
                 </div>
             )}
         </div>

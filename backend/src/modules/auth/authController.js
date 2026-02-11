@@ -3,20 +3,14 @@ const Accountant = require('./models/accountantModel');
 const jwt = require('jsonwebtoken');
 const logger = require('../../shared/logger/logger');
 
-// Generate JWT
 const generateToken = (id, role) => {
-    let expiresIn = '30m'; // Default Public
-    if (role === 'accountant') expiresIn = '10m'; // Accountant 10 min (strict)
-    if (role === 'admin') expiresIn = '5m';      // Admin 5 min (strict)
+    let expiresIn = '30m';
+    if (role === 'accountant') expiresIn = '10m';
+    if (role === 'admin') expiresIn = '5m';
 
-    return jwt.sign({ id, role }, process.env.JWT_SECRET, {
-        expiresIn
-    });
+    return jwt.sign({ id, role }, process.env.JWT_SECRET, { expiresIn });
 };
 
-// @desc    Register user (Public)
-// @route   POST /api/v1/public/register
-// @access  Public
 exports.registerPublic = async (req, res, next) => {
     try {
         const { name, email, password } = req.body;
@@ -41,9 +35,6 @@ exports.registerPublic = async (req, res, next) => {
     }
 };
 
-// @desc    Login user (Public)
-// @route   POST /api/v1/public/login
-// @access  Public
 exports.loginPublic = async (req, res, next) => {
     try {
         const { email, password } = req.body;
@@ -72,9 +63,6 @@ exports.loginPublic = async (req, res, next) => {
     }
 };
 
-// @desc    Login Accountant
-// @route   POST /api/v1/accountant/login
-// @access  Public (Credentials provided by Admin)
 exports.loginAccountant = async (req, res, next) => {
     try {
         const { username, password } = req.body;
@@ -90,7 +78,11 @@ exports.loginAccountant = async (req, res, next) => {
             return res.status(401).json({ message: 'Invalid credentials' });
         }
 
-        const token = jwt.sign({ id: accountant._id, role: 'accountant', version: accountant.tokenVersion }, process.env.JWT_SECRET, { expiresIn: '10m' });
+        const token = jwt.sign(
+            { id: accountant._id, role: 'accountant', version: accountant.tokenVersion },
+            process.env.JWT_SECRET,
+            { expiresIn: '10m' }
+        );
 
         logger.info(`Accountant logged in: ${username}`);
 
@@ -104,14 +96,8 @@ exports.loginAccountant = async (req, res, next) => {
     }
 };
 
-// @desc    Login Admin
-// @route   POST /api/v1/admin/login
-// @access  Public (Hardcoded credentials)
 exports.loginAdmin = async (req, res, next) => {
     const { username, password } = req.body;
-
-    console.log('Login Attempt:', { username, password });
-    console.log('Expected:', { user: process.env.ADMIN_USERNAME, pass: process.env.ADMIN_PASSWORD });
 
     if (username === process.env.ADMIN_USERNAME && password === process.env.ADMIN_PASSWORD) {
         const token = generateToken('admin-id', 'admin');
@@ -125,4 +111,3 @@ exports.loginAdmin = async (req, res, next) => {
     logger.warn(`Failed admin login attempt`);
     res.status(401).json({ message: 'Invalid admin credentials' });
 };
-

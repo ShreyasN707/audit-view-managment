@@ -22,7 +22,6 @@ export default function Login() {
         e.preventDefault();
         setError('');
 
-        // Prepare payload based on role
         const payload = {
             password: formData.password
         };

@@ -5,7 +5,6 @@ const authorize = require('../../shared/middleware/roleMiddleware');
 
 const router = express.Router();
 
-// Middleware to ensure only admin
 router.use(protect);
 router.use(authorize('admin'));
 

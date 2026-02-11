@@ -1,7 +1,8 @@
 import axios from 'axios';
 
 const api = axios.create({
-    baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000', // Fallback for local dev
+    baseURL: '/', // Use relative path for proxy
+
     headers: {
         'Content-Type': 'application/json',
     },

@@ -2,11 +2,7 @@ const express = require('express');
 const helmet = require('helmet');
 const cors = require('cors');
 const mongoSanitize = require('express-mongo-sanitize');
-const xss = require('xss-clean'); // Note: xss-clean is deprecated, but requested for "sanitization". We'll use helmet too.
-// actually xss-clean is not installed. 
-// I'll stick to helmet and mongoSanitize for now, and maybe manual sanitization if needed.
-// Wait, I installed xss-clean? No I didn't in the install command.
-// I'll just use helmet and mongoSanitize and custom validation.
+
 
 const errorHandler = require('./src/shared/middleware/errorHandler');
 

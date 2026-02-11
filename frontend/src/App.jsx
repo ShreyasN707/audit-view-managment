@@ -1,9 +1,10 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider, useAuth } from './src/context/AuthContext';
-import Layout from './src/components/Layout';
-import Login from './src/pages/Login';
-import Register from './src/pages/Register'; // We'll create this next
-import Dashboard from './src/pages/Dashboard'; // We'll create this next
+import { AuthProvider, useAuth } from './context/AuthContext';
+import Layout from './components/Layout';
+import Login from './pages/Login';
+import Register from './pages/Register'; // We'll create this next
+import Dashboard from './pages/Dashboard'; // We'll create this next
+
 
 // Protected Route Component
 const ProtectedRoute = ({ children, roles }) => {

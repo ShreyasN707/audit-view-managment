@@ -1,19 +1,14 @@
-version: '3.8'
-
 services:
   backend:
     build: ./backend
     ports:
       - "5000:5000"
-    environment:
-      - PORT=5000
-      - MONGO_URI=mongodb://mongo:27017/audit_system
-      - JWT_SECRET=supersecretkey_change_in_production
-      - ADMIN_USERNAME=admin
-      - ADMIN_PASSWORD=adminpassword
-      - NODE_ENV=development
-    depends_on:
-      - mongo
+    # Load environment variables from the file
+    env_file:
+      - ./backend/.env
+    # Allow access to host machine
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     volumes:
       - ./backend:/app
       - /app/node_modules
@@ -27,15 +22,7 @@ services:
     volumes:
       - ./frontend:/app
       - /app/node_modules
-    # For development, we use 'npm run dev' to keep hot reload
     command: npm run dev -- --host
-
-  mongo:
-    image: mongo:latest
-    ports:
-      - "27017:27017"
-    volumes:
-      - mongo_data:/data/db
 
   nginx:
     image: nginx:alpine
@@ -46,6 +33,3 @@ services:
     depends_on:
       - backend
       - frontend
-
-volumes:
-  mongo_data:

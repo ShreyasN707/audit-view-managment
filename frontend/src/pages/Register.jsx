@@ -1,60 +1,73 @@
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 
-const Register = () => {
-    const [name, setName] = useState('');
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
+export default function Register() {
     const { register } = useAuth();
     const navigate = useNavigate();
+
+    const [formData, setFormData] = useState({
+        name: '',
+        email: '',
+        password: ''
+    });
     const [error, setError] = useState('');
+
+    const handleChange = (e) => {
+        setFormData({ ...formData, [e.target.name]: e.target.value });
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
-        // Register relies on context, calls /api/v1/public/register
-        const res = await axios.post('/api/v1/public/register', { name, email, password });
-        // Wait, Context implementation of register was:
-        // const res = await axios.post(..., credentials);
-        // But in Context I didn't export 'register' fully working with axios inside?
-        // Let's check Context code. 
-        // Context: const register = async (credentials) => { ... }
-        // So I should use `register` from useAuth.
 
-        // However, I need to pass the right object.
-        const response = await register({ name, email, password });
-
-        if (response.success) {
-            navigate('/');
+        const res = await register(formData);
+        if (res.success) {
+            navigate('/dashboard');
         } else {
-            setError(response.message);
+            setError(res.message);
         }
     };
 
     return (
-        <div className="max-w-md mx-auto bg-white p-8 border border-gray-200 rounded-lg shadow-sm">
-            <h2 className="text-2xl font-bold mb-6 text-center">Register (Public)</h2>
-            {error && <div className="bg-red-50 text-red-600 p-3 rounded mb-4">{error}</div>}
-            <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                    <label className="block text-sm font-medium text-gray-700">Name</label>
-                    <input type="text" value={name} onChange={(e) => setName(e.target.value)} required className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
-                </div>
-                <div>
-                    <label className="block text-sm font-medium text-gray-700">Email</label>
-                    <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
-                </div>
-                <div>
-                    <label className="block text-sm font-medium text-gray-700">Password</label>
-                    <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
-                </div>
-                <button type="submit" className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                    Register
-                </button>
+        <div style={{ padding: '2rem', maxWidth: '400px', margin: '0 auto' }}>
+            <h2>Register (Public)</h2>
+            {error && <p style={{ color: 'red' }}>{error}</p>}
+
+            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <input
+                    name="name"
+                    type="text"
+                    placeholder="Full Name"
+                    value={formData.name}
+                    onChange={handleChange}
+                    required
+                    style={{ padding: '0.5rem' }}
+                />
+
+                <input
+                    name="email"
+                    type="email"
+                    placeholder="Email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    required
+                    style={{ padding: '0.5rem' }}
+                />
+
+                <input
+                    name="password"
+                    type="password"
+                    placeholder="Password"
+                    value={formData.password}
+                    onChange={handleChange}
+                    required
+                    style={{ padding: '0.5rem' }}
+                />
+
+                <button type="submit" style={{ padding: '0.5rem', background: 'green', color: 'white' }}>Register</button>
             </form>
+            <p>Already have an account? <Link to="/login">Login</Link></p>
         </div>
     );
-};
-
-export default Register;
+}

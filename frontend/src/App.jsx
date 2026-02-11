@@ -1,65 +1,40 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider, useAuth } from './context/AuthContext';
-import Layout from './components/Layout';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider } from './context/AuthContext';
 import Login from './pages/Login';
-import Register from './pages/Register'; // We'll create this next
-import Dashboard from './pages/Dashboard'; // We'll create this next
+import Register from './pages/Register';
+import PublicDashboard from './components/PublicDashboard';
+import AccountantDashboard from './components/AccountantDashboard';
+import AdminDashboard from './components/AdminDashboard';
 
-
-// Protected Route Component
-const ProtectedRoute = ({ children, roles }) => {
-    const { user, loading } = useAuth();
-
-    if (loading) return <div>Loading...</div>;
-
-    if (!user) return <Navigate to="/login" />;
-
-    if (roles && !roles.includes(user.role)) {
-        return <Navigate to="/" />; // Or 403 page
-    }
-
-    return children;
-};
-
-function AppRoutes() {
-    return (
-        <Layout>
-            <Routes>
-                <Route path="/login" element={<Login />} />
-                <Route path="/register" element={<Register />} />
-
-                {/* Public Routes (Authenticated) */}
-                <Route path="/" element={
-                    <ProtectedRoute roles={['public', 'accountant', 'admin']}>
-                        <Dashboard />
-                    </ProtectedRoute>
-                } />
-
-                {/* Accountant Routes (Explicit) */}
-                <Route path="/accountant" element={
-                    <ProtectedRoute roles={['accountant']}>
-                        <Dashboard />
-                    </ProtectedRoute>
-                } />
-
-                {/* Admin Routes (Explicit) */}
-                <Route path="/admin" element={
-                    <ProtectedRoute roles={['admin']}>
-                        <Dashboard />
-                    </ProtectedRoute>
-                } />
-
-            </Routes>
-        </Layout>
-    );
-}
+// Simple placeholder layout
+const Layout = ({ children }) => (
+    <div style={{ minHeight: '100vh', background: '#f5f5f5' }}>
+        <header style={{ background: '#333', color: '#fff', padding: '1rem' }}>
+            <h1>Audit System (Minimal)</h1>
+        </header>
+        <main style={{ padding: '2rem' }}>{children}</main>
+    </div>
+);
 
 function App() {
     return (
         <AuthProvider>
-            <Router>
-                <AppRoutes />
-            </Router>
+            <BrowserRouter>
+                <Layout>
+                    <Routes>
+                        <Route path="/login" element={<Login />} />
+                        <Route path="/register" element={<Register />} />
+
+                        {/* Dashboards - We use the existing components but routable directly for testing */}
+                        <Route path="/dashboard" element={<PublicDashboard />} />
+                        <Route path="/accountant" element={<AccountantDashboard />} />
+                        <Route path="/admin" element={<AdminDashboard />} />
+
+                        {/* Redirect root to login */}
+                        <Route path="/" element={<Navigate to="/login" />} />
+                    </Routes>
+                </Layout>
+            </BrowserRouter>
         </AuthProvider>
     );
 }

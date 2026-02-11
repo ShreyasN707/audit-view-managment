@@ -10,9 +10,19 @@ const app = express();
 
 // Security Middleware
 app.use(helmet());
-app.use(cors());
+
+// Logging Middleware (Debug)
+app.use((req, res, next) => {
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+    console.log('Headers:', req.headers);
+    console.log('Body:', req.body);
+    next();
+});
+
+app.use(cors({ origin: '*', credentials: true })); // Allow all for dev
 app.use(express.json({ limit: '10kb' })); // Body limit
 app.use(mongoSanitize()); // Prevent NoSQL injection
+
 
 const authRoutes = require('./src/modules/auth/authRoutes');
 const auditRoutes = require('./src/modules/audits/auditRoutes');

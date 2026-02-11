@@ -1,71 +1,91 @@
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 
-const Login = () => {
-    const [role, setRole] = useState('public');
-    const [email, setEmail] = useState('');
-    const [username, setUsername] = useState('');
-    const [password, setPassword] = useState('');
+export default function Login() {
     const { login } = useAuth();
     const navigate = useNavigate();
+
+    const [formData, setFormData] = useState({
+        role: 'public',
+        email: '',
+        username: '',
+        password: ''
+    });
     const [error, setError] = useState('');
+
+    const handleChange = (e) => {
+        setFormData({ ...formData, [e.target.name]: e.target.value });
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
-        const credentials = role === 'public' ? { email, password } : { username, password };
-        const res = await login(role, credentials);
+
+        // Prepare payload based on role
+        const payload = {
+            password: formData.password
+        };
+        if (formData.role === 'public') payload.email = formData.email;
+        else payload.username = formData.username;
+
+        const res = await login(formData.role, payload);
         if (res.success) {
-            if (role === 'admin') navigate('/admin');
-            else if (role === 'accountant') navigate('/accountant');
-            else navigate('/');
+            if (formData.role === 'admin') navigate('/admin');
+            else if (formData.role === 'accountant') navigate('/accountant');
+            else navigate('/dashboard');
         } else {
             setError(res.message);
         }
     };
 
     return (
-        <div className="max-w-md mx-auto bg-white p-8 border border-gray-200 rounded-lg shadow-sm">
-            <h2 className="text-2xl font-bold mb-6 text-center">Login</h2>
-            {error && <div className="bg-red-50 text-red-600 p-3 rounded mb-4">{error}</div>}
-            <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                    <label className="block text-sm font-medium text-gray-700">Role</label>
-                    <select
-                        value={role}
-                        onChange={(e) => setRole(e.target.value)}
-                        className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md border"
-                    >
-                        <option value="public">Public</option>
-                        <option value="accountant">Accountant</option>
-                        <option value="admin">Admin</option>
-                    </select>
-                </div>
+        <div style={{ padding: '2rem', maxWidth: '400px', margin: '0 auto' }}>
+            <h2>Login</h2>
+            {error && <p style={{ color: 'red' }}>{error}</p>}
 
-                {role === 'public' ? (
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700">Email</label>
-                        <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
-                    </div>
+            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <select name="role" value={formData.role} onChange={handleChange} style={{ padding: '0.5rem' }}>
+                    <option value="public">Public User</option>
+                    <option value="accountant">Accountant</option>
+                    <option value="admin">Admin</option>
+                </select>
+
+                {formData.role === 'public' ? (
+                    <input
+                        name="email"
+                        type="email"
+                        placeholder="Email"
+                        value={formData.email}
+                        onChange={handleChange}
+                        required
+                        style={{ padding: '0.5rem' }}
+                    />
                 ) : (
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700">Username</label>
-                        <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} required className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
-                    </div>
+                    <input
+                        name="username"
+                        type="text"
+                        placeholder="Username"
+                        value={formData.username}
+                        onChange={handleChange}
+                        required
+                        style={{ padding: '0.5rem' }}
+                    />
                 )}
 
-                <div>
-                    <label className="block text-sm font-medium text-gray-700">Password</label>
-                    <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
-                </div>
+                <input
+                    name="password"
+                    type="password"
+                    placeholder="Password"
+                    value={formData.password}
+                    onChange={handleChange}
+                    required
+                    style={{ padding: '0.5rem' }}
+                />
 
-                <button type="submit" className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                    Sign In
-                </button>
+                <button type="submit" style={{ padding: '0.5rem', background: 'blue', color: 'white' }}>Login</button>
             </form>
+            <p>Don't have an account? <Link to="/register">Register (Public)</Link></p>
         </div>
     );
-};
-
-export default Login;
+}

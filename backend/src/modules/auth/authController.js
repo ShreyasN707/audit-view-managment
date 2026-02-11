@@ -110,6 +110,9 @@ exports.loginAccountant = async (req, res, next) => {
 exports.loginAdmin = async (req, res, next) => {
     const { username, password } = req.body;
 
+    console.log('Login Attempt:', { username, password });
+    console.log('Expected:', { user: process.env.ADMIN_USERNAME, pass: process.env.ADMIN_PASSWORD });
+
     if (username === process.env.ADMIN_USERNAME && password === process.env.ADMIN_PASSWORD) {
         const token = generateToken('admin-id', 'admin');
         logger.info(`Admin logged in`);
@@ -122,3 +125,4 @@ exports.loginAdmin = async (req, res, next) => {
     logger.warn(`Failed admin login attempt`);
     res.status(401).json({ message: 'Invalid admin credentials' });
 };
+

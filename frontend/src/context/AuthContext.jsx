@@ -8,28 +8,27 @@ export const AuthProvider = ({ children }) => {
     const [token, setToken] = useState(localStorage.getItem('token'));
     const [loading, setLoading] = useState(true);
 
+    // Initial Load Check
     useEffect(() => {
-        const checkAuth = async () => {
-            if (token) {
-                api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-                // Restore basic state from localStorage if available
-                const storedRole = localStorage.getItem('userRole');
-                const storedName = localStorage.getItem('userName');
+        const initAuth = () => {
+            const storedToken = localStorage.getItem('token');
+            const storedRole = localStorage.getItem('userRole');
+            const storedName = localStorage.getItem('userName');
 
-                if (storedRole) {
-                    setUser({
-                        role: storedRole,
-                        username: storedName // For display purposes
-                    });
-                }
+            if (storedToken && storedRole) {
+                setToken(storedToken);
+                setUser({
+                    role: storedRole,
+                    username: storedName || 'User'
+                });
             } else {
-                delete api.defaults.headers.common['Authorization'];
+                setToken(null);
                 setUser(null);
             }
             setLoading(false);
         };
-        checkAuth();
-    }, [token]);
+        initAuth();
+    }, []);
 
     const login = async (role, data) => {
         let url = '/api/v1/public/login';
@@ -38,50 +37,62 @@ export const AuthProvider = ({ children }) => {
 
         try {
             const res = await api.post(url, data);
-            const newToken = res.data.token;
 
-            setToken(newToken);
+            // Check response structure: Admin returns 'token', Public returns 'accessToken'
+            const newToken = res.data.token || res.data.accessToken;
+            const refreshToken = res.data.refreshToken; // Only public users get this (for now)
+
+            if (!newToken) throw new Error('No token received from server');
+
+            // Store in LocalStorage
             localStorage.setItem('token', newToken);
             localStorage.setItem('userRole', role);
 
-            // Try to set a display name if available or use role/username
             const displayName = data.username || data.email || role;
             localStorage.setItem('userName', displayName);
 
+            // Update State
+            setToken(newToken);
             setUser({ role, username: displayName });
 
             return { success: true };
         } catch (err) {
-            console.error("Login Error:", err);
-            return { success: false, message: err.response?.data?.message || 'Login failed' };
+            console.error("Login Failed:", err);
+            return {
+                success: false,
+                message: err.response?.data?.message || err.message || 'Login failed'
+            };
         }
     };
 
     const register = async (data) => {
         try {
             const res = await api.post('/api/v1/public/register', data);
-            const newToken = res.data.token;
+            const newToken = res.data.accessToken; // Register returns accessToken
 
-            setToken(newToken);
+            if (!newToken) throw new Error('No token received');
+
             localStorage.setItem('token', newToken);
             localStorage.setItem('userRole', 'public');
             localStorage.setItem('userName', data.name);
 
+            setToken(newToken);
             setUser({ role: 'public', username: data.name });
 
             return { success: true };
         } catch (err) {
-            return { success: false, message: err.response?.data?.message || 'Registration failed' };
+            return {
+                success: false,
+                message: err.response?.data?.message || 'Registration failed'
+            };
         }
     };
 
     const logout = () => {
         setToken(null);
         setUser(null);
-        localStorage.removeItem('token');
-        localStorage.removeItem('userRole');
-        localStorage.removeItem('userName');
-        delete api.defaults.headers.common['Authorization'];
+        localStorage.clear(); // Clear everything
+        window.location.href = '/login';
     };
 
     return (
@@ -91,4 +102,10 @@ export const AuthProvider = ({ children }) => {
     );
 };
 
-export const useAuth = () => useContext(AuthContext);
+export const useAuth = () => {
+    const context = useContext(AuthContext);
+    if (!context) {
+        throw new Error('useAuth must be used within an AuthProvider');
+    }
+    return context;
+};

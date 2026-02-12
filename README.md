@@ -77,6 +77,12 @@ Security is a core pillar of this application. We have implemented the following
 Note: The administrator credentials are hard-coded because the system is designed to support a single, fixed admin account with controlled access.
 
 ```
+
+## API Documentation
+
+For full API documentation, please refer to the included Postman Collection:
+- [Government Audit Listing API.postman_collection.json](./API_docs/Government%20Audit%20Listing%20API.postman_collection.json)
+
 ## Scalability
 
 For Scalability Note, see [SCALABILITY.md](./SCALABILITY.md).

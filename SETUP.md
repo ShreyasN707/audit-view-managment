@@ -9,7 +9,7 @@ Follow these instructions to set up the Government Audit Management System local
 
 ## Installation
 
-### 🐳 Docker Deployment (Recommended)
+### 🐳 Docker Deployment 
 The easiest way to run the application is using Docker. This will set up the Backend, Frontend, and MongoDB automatically.
 
 1.  **Clone the repository:**
@@ -29,7 +29,7 @@ The easiest way to run the application is using Docker. This will set up the Bac
 
 ---
 
-### ⚙️ Manual Installation (Local Dev)
+### ⚙️ Manual Installation 
 
 ### 1. Clone the Repository
 ```bash

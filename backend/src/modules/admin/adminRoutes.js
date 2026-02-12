@@ -5,12 +5,9 @@ const authorize = require('../../shared/middleware/roleMiddleware');
 
 const router = express.Router();
 
-router.use(protect);
-router.use(authorize('admin'));
-
-router.post('/admin/accountants', createAccountant);
-router.patch('/admin/accountants/:id/password', resetAccountantPassword);
-router.get('/admin/shelves', getAllShelves);
-router.get('/admin/logs', getSystemLogs);
+router.post('/admin/accountants', protect, authorize('admin'), createAccountant);
+router.patch('/admin/accountants/:id/password', protect, authorize('admin'), resetAccountantPassword);
+router.get('/admin/shelves', protect, authorize('admin'), getAllShelves);
+router.get('/admin/logs', protect, authorize('admin'), getSystemLogs);
 
 module.exports = router;

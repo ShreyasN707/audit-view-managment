@@ -5,8 +5,8 @@ const logger = require('../../shared/logger/logger');
 
 const generateToken = (id, role) => {
     let expiresIn = '30m';
-    if (role === 'accountant') expiresIn = '10m';
-    if (role === 'admin') expiresIn = '5m';
+    if (role === 'accountant') expiresIn = '15m';
+    if (role === 'admin') expiresIn = '10m';
 
     return jwt.sign({ id, role }, process.env.JWT_SECRET, { expiresIn });
 };
@@ -47,7 +47,7 @@ exports.loginPublic = async (req, res, next) => {
 
         if (!user || !(await user.matchPassword(password))) {
             logger.warn(`Failed login attempt for public user: ${email}`);
-            return res.status(401).json({ message: 'Invalid credentials' });
+            return res.status(401).json({ message: 'Incorrect email or password' });
         }
 
         const token = generateToken(user._id, 'public');
@@ -75,13 +75,13 @@ exports.loginAccountant = async (req, res, next) => {
 
         if (!accountant || !(await accountant.matchPassword(password))) {
             logger.warn(`Failed login attempt for accountant: ${username}`);
-            return res.status(401).json({ message: 'Invalid credentials' });
+            return res.status(401).json({ message: 'Incorrect username or password' });
         }
 
         const token = jwt.sign(
             { id: accountant._id, role: 'accountant', version: accountant.tokenVersion },
             process.env.JWT_SECRET,
-            { expiresIn: '10m' }
+            { expiresIn: '15m' }
         );
 
         logger.info(`Accountant logged in: ${username}`);

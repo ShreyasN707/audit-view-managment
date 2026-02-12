@@ -2,11 +2,11 @@
 
 A secure and transparent platform for managing government audits, facilitating seamless collaboration between Public users, Accountants, and Administrators.
 
-### Architecture: Modular Monolith
+### **Architecture:** Modular Monolith
 
 The application follows a **Modular Monolith architecture**, where the system is deployed as a single backend service but internally structured into well-defined modules such as authentication, audits, shelves, and administration. This keeps the system simple to operate while maintaining clear separation of concerns. The modular design allows the backend to scale horizontally and provides a smooth path to extract individual modules into microservices in the future, if required.
 
-## 📂 Project Structure
+## Project Structure
 
 ```text
 root/
@@ -34,7 +34,7 @@ root/
 └── docker-compose.yml        # Container orchestration
 ```
 
-## 🛠️ Technology Stack
+## Technology Stack
 
 ### Backend
 *   **Runtime:** Node.js
@@ -50,7 +50,7 @@ root/
 *   **Routing:** React Router DOM
 *   **HTTP Client:** Axios
 
-## 🔒 Security Implementation
+## Security Implementation
 
 Security is a core pillar of this application. We have implemented the following measures:
 
@@ -74,11 +74,11 @@ Security is a core pillar of this application. We have implemented the following
     *   User-friendly error messages (e.g., "Incorrect email or password" instead of raw database errors).
 
 
-## 📈 Scalability
+## Scalability
 
 For Scalability Note, see [SCALABILITY.md](./SCALABILITY.md).
 
-## 🚀 Getting Started
+## Setup
 
 For installation and setup,see [SETUP.md](./SETUP.md).
 

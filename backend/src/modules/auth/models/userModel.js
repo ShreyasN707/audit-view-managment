@@ -21,6 +21,10 @@ const userSchema = new mongoose.Schema({
         enum: ['public'],
         default: 'public'
     },
+    refreshToken: {
+        type: String,
+        select: false
+    },
     password: {
         type: String,
         required: [true, 'Please add a password'],

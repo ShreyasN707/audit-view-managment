@@ -3,12 +3,14 @@ const Accountant = require('./models/accountantModel');
 const jwt = require('jsonwebtoken');
 const logger = require('../../shared/logger/logger');
 
-const generateToken = (id, role) => {
-    let expiresIn = '30m';
-    if (role === 'accountant') expiresIn = '15m';
-    if (role === 'admin') expiresIn = '10m';
+const generateTokens = (id, role) => {
+    // Access Token (Short: 15m)
+    const accessToken = jwt.sign({ id, role }, process.env.JWT_SECRET, { expiresIn: '15m' });
 
-    return jwt.sign({ id, role }, process.env.JWT_SECRET, { expiresIn });
+    // Refresh Token (Long: 7d)
+    const refreshToken = jwt.sign({ id, role, type: 'refresh' }, process.env.JWT_SECRET, { expiresIn: '7d' });
+
+    return { accessToken, refreshToken };
 };
 
 exports.registerPublic = async (req, res, next) => {
@@ -22,13 +24,18 @@ exports.registerPublic = async (req, res, next) => {
             role: 'public'
         });
 
-        const token = generateToken(user._id, 'public');
+        const { accessToken, refreshToken } = generateTokens(user._id, 'public');
+
+        // Store refresh token
+        user.refreshToken = refreshToken;
+        await user.save({ validateBeforeSave: false });
 
         logger.info(`New public user registered: ${email}`);
 
         res.status(201).json({
             success: true,
-            token
+            accessToken,
+            refreshToken
         });
     } catch (err) {
         next(err);
@@ -50,13 +57,18 @@ exports.loginPublic = async (req, res, next) => {
             return res.status(401).json({ message: 'Incorrect email or password' });
         }
 
-        const token = generateToken(user._id, 'public');
+        const { accessToken, refreshToken } = generateTokens(user._id, 'public');
+
+        // Store refresh token
+        user.refreshToken = refreshToken;
+        await user.save({ validateBeforeSave: false });
 
         logger.info(`Public user logged in: ${email}`);
 
         res.status(200).json({
             success: true,
-            token
+            accessToken,
+            refreshToken
         });
     } catch (err) {
         next(err);
@@ -100,14 +112,49 @@ exports.loginAdmin = async (req, res, next) => {
     const { username, password } = req.body;
 
     if (username === process.env.ADMIN_USERNAME && password === process.env.ADMIN_PASSWORD) {
-        const token = generateToken('admin-id', 'admin');
+        const { accessToken } = generateTokens('admin-id', 'admin');
         logger.info(`Admin logged in`);
         return res.status(200).json({
             success: true,
-            token
+            token: accessToken // Admin still uses single token for now as per existing frontend
         });
     }
 
     logger.warn(`Failed admin login attempt`);
     res.status(401).json({ message: 'Invalid admin credentials' });
+};
+
+exports.refreshTokenPublic = async (req, res, next) => {
+    const { refreshToken } = req.body;
+
+    if (!refreshToken) {
+        return res.status(400).json({ message: 'Please provide a refresh token' });
+    }
+
+    try {
+        // 1. Verify Refresh Token
+        const decoded = jwt.verify(refreshToken, process.env.JWT_SECRET);
+
+        // 2. Find User and Check Stored Token
+        const user = await User.findById(decoded.id).select('+refreshToken');
+
+        if (!user || user.refreshToken !== refreshToken) {
+            return res.status(401).json({ message: 'Invalid Refresh Token' });
+        }
+
+        // 3. Generate New Tokens (Rotate Refresh Token)
+        const newTokens = generateTokens(user._id, 'public');
+
+        user.refreshToken = newTokens.refreshToken;
+        await user.save({ validateBeforeSave: false });
+
+        res.status(200).json({
+            success: true,
+            accessToken: newTokens.accessToken,
+            refreshToken: newTokens.refreshToken
+        });
+
+    } catch (err) {
+        return res.status(401).json({ message: 'Invalid/Expired Refresh Token' });
+    }
 };

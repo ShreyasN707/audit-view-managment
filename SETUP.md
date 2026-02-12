@@ -9,9 +9,31 @@ Follow these instructions to set up the Government Audit Management System local
 
 ## Installation
 
+### 🐳 Docker Deployment (Recommended)
+The easiest way to run the application is using Docker. This will set up the Backend, Frontend, and MongoDB automatically.
+
+1.  **Clone the repository:**
+    ```bash
+    git clone https://github.com/ShreyasN707/audit-view-managment.git
+    cd audit-management-system
+    ```
+
+2.  **Run with Docker Compose:**
+    ```bash
+    docker-compose up --build -d
+    ```
+
+3.  **Access the Application:**
+    *   **Frontend:** [http://localhost](http://localhost)
+    *   **Backend API:** [http://localhost/api](http://localhost/api)
+
+---
+
+### ⚙️ Manual Installation (Local Dev)
+
 ### 1. Clone the Repository
 ```bash
-git clone <repository_url>
+git clone https://github.com/ShreyasN707/audit-view-managment.git
 cd audit-management-system
 ```
 
@@ -28,8 +50,8 @@ Create a `.env` file in the `backend/` directory with the following variables:
 
 ```env
 PORT=5000
-MONGO_URI=mongodb://localhost:27017/audit_system
-JWT_SECRET=your_super_secret_key_change_this
+MONGO_URI=mongo_url
+JWT_SECRET=Your_JWT_Key
 ADMIN_USERNAME=admin
 ADMIN_PASSWORD=admin123
 ```

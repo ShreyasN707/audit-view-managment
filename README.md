@@ -82,7 +82,12 @@ For Scalability Note, see [SCALABILITY.md](./SCALABILITY.md).
 
 For installation and setup instructions,refer to [SETUP.md](./SETUP.md).
 
-### Quick Start
+### Quick Start (Recommended)
+1.  **Docker:** `docker-compose up --build -d`
+    *   App: `http://localhost`
+    *   API: `http://localhost/api`
+
+### Manual Start (Dev)
 1.  **Backend:** `npm install` -> `npm run dev` (Port 5000)
 2.  **Frontend:** `npm install` -> `npm run dev` (Port 5173)
 

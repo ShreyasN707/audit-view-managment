@@ -1,26 +1,40 @@
 services:
+  # MongoDB Database
+  mongo:
+    image: mongo:latest
+    container_name: audit_mongo
+    restart: always
+    ports:
+      - "27017:27017" # Exposed for local debugging, removal optional for prod
+    volumes:
+      - mongo_data:/data/db
+
+  # Backend API
   backend:
     build: ./backend
+    container_name: audit_backend
+    restart: always
     ports:
       - "5000:5000"
-    # Load environment variables from the file
-    env_file:
-      - ./backend/.env
-    # Allow access to host machine
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-    volumes:
-      - ./backend:/app
-      - /app/node_modules
+    environment:
+      - PORT=5000
+      - MONGO_URI=mongodb://mongo:27017/audit_system
+      - JWT_SECRET=production_secret_key_change_this_immediately
+      - ADMIN_USERNAME=admin
+      - ADMIN_PASSWORD=admin123
+      - NODE_ENV=production
+    depends_on:
+      - mongo
 
+  # Frontend (Nginx serving React)
   frontend:
     build: ./frontend
+    container_name: audit_frontend
+    restart: always
     ports:
-      - "5173:5173"
-    environment:
-      - VITE_API_URL=http://localhost:5000
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
-    command: npm run dev -- --host
+      - "80:80"
+    depends_on:
+      - backend
 
+volumes:
+  mongo_data:

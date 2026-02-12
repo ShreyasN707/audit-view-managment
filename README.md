@@ -73,7 +73,10 @@ Security is a core pillar of this application. We have implemented the following
     *   Centralized error handling ensures no sensitive stack traces are leaked to the client.
     *   User-friendly error messages (e.g., "Incorrect email or password" instead of raw database errors).
 
+```
+Note: The administrator credentials are hard-coded because the system is designed to support a single, fixed admin account with controlled access.
 
+```
 ## Scalability
 
 For Scalability Note, see [SCALABILITY.md](./SCALABILITY.md).

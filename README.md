@@ -83,6 +83,11 @@ Note: The administrator credentials are hard-coded because the system is designe
 For full API documentation, please refer to the included Postman Collection:
 - [Government Audit Listing API.postman_collection.json](./API_docs/Government%20Audit%20Listing%20API.postman_collection.json)
 
+To use:
+1. Import the collection into Postman
+2. Run the backend locally
+3. Test the APIs using the documented requests
+
 ## Scalability
 
 For Scalability Note, see [SCALABILITY.md](./SCALABILITY.md).

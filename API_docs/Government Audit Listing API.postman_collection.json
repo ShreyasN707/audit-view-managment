@@ -1,0 +1,882 @@
+{
+  "info": {
+    "_postman_id": "2d3414d8-9e19-4e99-a8aa-3ec8a966e4b7",
+    "name": "Government Audit Listing API",
+    "description": "# Government Audit Management API (v1)\n\nThe Government Audit Management API provides a secure and role-based interface to manage government audit listings. It enables public users to browse audits and maintain personal audit shelves, allows accountants to create and manage audits, and gives administrators full oversight of users, audits, shelves, and immutable system logs.\n\nThe API is designed following REST principles, uses JWT-based authentication, and is structured as a modular monolith for clarity, security, and scalability.\n\n---\n\n## Getting Started\n\nTo start using the Government Audit Management API, follow these steps:\n\n1. Set up and run the backend server locally or on a hosted environment.\n    \n2. Ensure MongoDB is available and properly configured.\n    \n3. Use the provided Postman collection to test and interact with the APIs.\n    \n4. Authenticate using the appropriate login endpoint to obtain a JWT token.\n    \n5. Include the JWT token in the `Authorization` header for all protected requests.\n    \n\n### General API Notes\n\n- All APIs are versioned under :`/api/v1/`\n    \n- All requests and responses use **JSON**\n    \n- All protected endpoints require authentication\n    \n- HTTPS is recommended for all environments\n    \n- Proper HTTP status codes are returned for all responses\n    \n\n---\n\n## Authentication\n\nThe API uses **JWT (JSON Web Token)** based authentication.\n\nAfter a successful login, the API returns a JWT token. This token must be included in every protected request using the following header:\n\nAuthorization: Bearer\n\n### Role-Based Access\n\nAuthentication tokens are issued with an embedded role, which determines access permissions:\n\n- **Public** – Read-only access to audits and shelf management\n    \n- **Accountant** – Create and update audits\n    \n- **Admin** – Full system access and oversight\n    \n\nThe system never trusts roles sent from the request body; all permissions are derived from the verified JWT token.\n\n---\n\n### Authentication Error Responses\n\n| Status Code | Description |\n| --- | --- |\n| 401 Unauthorized | Missing, invalid, or expired JWT token |\n| 403 Forbidden | Valid token but insufficient permissions |\n\n---\n\n## Rate and Usage Limits\n\nTo ensure system stability and prevent abuse, rate limiting is applied:\n\n- Authentication and admin endpoints are rate-limited more strictly\n    \n- Excessive requests may result in temporary blocking\n    \n\nIf rate limits are exceeded, the API returns:\n\n- HTTP 429 – Too Many Requests\n    \n\nEach response may include headers indicating rate limit status:\n\n| Header | Description |\n| --- | --- |\n| X-RateLimit-Limit | Maximum requests allowed |\n| X-RateLimit-Remaining | Remaining requests in the current window |\n| X-RateLimit-Reset | Time when the rate limit resets (UTC epoch) |\n\n---\n\n## Error Handling\n\nAll error responses follow a consistent JSON format:\n\n``` json\n{\n\"error\": \"Error message describing what went wrong\"\n}\n\n\n ```\n\nCommon HTTP status codes used:\n\n- 400 Bad Request – Validation or malformed input\n    \n- 401 Unauthorized – Authentication failure\n    \n- 403 Forbidden – Authorization or ownership violation\n    \n- 404 Not Found – Resource does not exist\n    \n- 409 Conflict – Duplicate or conflicting operation\n    \n- 500 Internal Server Error – Unexpected server error\n    \n\n1. API Availability (503 Responses)  \n    An HTTP 503 Service Unavailable response indicates a temporary issue, such as a traffic spike or maintenance window. In most cases, service is restored shortly. If the issue persists, retry the request after some time.\n    \n2. Logging & Auditability  \n    All critical system actions—such as logins, audit creation, shelf updates, and administrative changes—are recorded using append-only, immutable server-side logs. These logs are read-only and accessible only to administrators for audit and compliance purposes.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "41651182"
+  },
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Auth",
+          "item": [
+            {
+              "name": "Success-runs",
+              "item": [
+                {
+                  "name": "Login Public",
+                  "event": [
+                    {
+                      "listen": "test",
+                      "script": {
+                        "exec": [
+                          "pm.test(\"Status code is 200\", function () {",
+                          "    pm.response.to.have.status(200);",
+                          "});",
+                          "var jsonData = pm.response.json();",
+                          "if (jsonData.token) {",
+                          "    pm.environment.set(\"public_token\", jsonData.token);",
+                          "}"
+                        ],
+                        "type": "text/javascript"
+                      }
+                    }
+                  ],
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n    \"email\": \"test@example.com\",\n    \"password\": \"password123\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{base_url}}/api/v1/public/login",
+                      "host": [
+                        "{{base_url}}"
+                      ],
+                      "path": [
+                        "api",
+                        "v1",
+                        "public",
+                        "login"
+                      ]
+                    },
+                    "description": "StartFragment\n\n### User Login\n\n**Endpoint:** `POST /api/v1/public/login`\n\nAuthenticates a public user and returns a JWT.\n\n##### **Request Body**\n\n``` json\n{\n  \"email\": \"john@example.com\",\n  \"password\": \"securepassword123\"\n}\n\n ```\n\n##### **Success Response (200)**\n\n``` json\n{\n  \"status\": \"success\",\n  \"token\": \"eyJhbGciOiJIUzI1...\"\n}\n\n ```\n\n**Edge Cases**\n\n- `401 Unauthorized` – Invalid email or password\n    \n- `429 Too Many Requests` – Too many failed login attempts\n    \n\nEndFragment"
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Register Public User",
+                  "event": [
+                    {
+                      "listen": "test",
+                      "script": {
+                        "exec": [
+                          "pm.test(\"Status code is 201\", function () {",
+                          "    pm.response.to.have.status(201);",
+                          "});",
+                          "var jsonData = pm.response.json();",
+                          "pm.test(\"Token is present\", function () {",
+                          "    pm.expect(jsonData.token).to.not.be.undefined;",
+                          "});",
+                          "if (jsonData.token) {",
+                          "    pm.environment.set(\"public_token\", jsonData.token);",
+                          "}"
+                        ],
+                        "type": "text/javascript"
+                      }
+                    }
+                  ],
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n    \"name\": \"Test User\",\n    \"email\": \"test{{$randomInt}}@example.com\",\n    \"password\": \"password123\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{base_url}}/api/v1/auth/register",
+                      "host": [
+                        "{{base_url}}"
+                      ],
+                      "path": [
+                        "api",
+                        "v1",
+                        "auth",
+                        "register"
+                      ]
+                    },
+                    "description": "### User Registration\n\n**Endpoint:** `POST /api/v1/public/register`  \n  \nCreates a new public user account.\n\n**Request Body:**\n\n``` json\n{\n  \"name\": \"John Doe\",\n  \"email\": \"john@example.com\",\n  \"password\": \"securepassword123\"\n}\n\n ```\n\n**Success Response (201)**\n\n``` json\n{\n  \"status\": \"success\",\n  \"token\": \"eyJhbGciOiJIUzI1...\"\n}\n\n ```\n\n**Edge Cases**\n\n- `400 Bad Request` – Missing or invalid fields\n    \n- `409 Conflict` – Email already registered"
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Login Admin",
+                  "event": [
+                    {
+                      "listen": "test",
+                      "script": {
+                        "exec": [
+                          "pm.test(\"Status code is 200\", function () {",
+                          "    pm.response.to.have.status(200);",
+                          "});",
+                          "var jsonData = pm.response.json();",
+                          "if (jsonData.token) {",
+                          "    pm.environment.set(\"admin_token\", jsonData.token);",
+                          "}"
+                        ],
+                        "type": "text/javascript"
+                      }
+                    }
+                  ],
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n    \"username\": \"admin\",\n    \"password\": \"admin123\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{base_url}}/api/v1/admin/login",
+                      "host": [
+                        "{{base_url}}"
+                      ],
+                      "path": [
+                        "api",
+                        "v1",
+                        "admin",
+                        "login"
+                      ]
+                    },
+                    "description": "StartFragment\n\n## **Login Admin**\n\n### Overview  \nThis request logs in an administrator user to the backend service and returns a JSON Web Token (JWT). The token is then stored in an environment variable for use in subsequent authenticated admin requests.\n\n### Request\n\n- Method: `POST`\n    \n- URL: `http://localhost:5000/api/v1/admin/login`\n    \n- Headers:\n    \n    - `username: admin`\n        \n    - `password: admin123`\n        \n- Body (raw JSON):\n    \n\n``` json\n{    \"username\": \"admin\",    \"password\": \"admin123\"}\n\n ```\n\n### Response\n\n- Expected status: `200 OK`\n    \n- Expected body (example shape):\n    \n\n``` json\n{    \"success\": true,    \"token\": \"<jwt-token-string>\"}\n\n ```\n\nPostman tests / environment variables\n\n- The test script asserts that the response status is `200`.\n    \n- If `jsonData.token` is present in the response, it is saved to the environment as:\n    \n    - `admin_token =`\n        \n\n### Usage notes\n\n- After a successful login, use `{{admin_token}}` as a Bearer token (or in headers as required by your API) for subsequent admin-protected endpoints.\n    \n- Update the username/password in the body and headers if your admin credentials change.\n    \n\nEndFragment"
+                  },
+                  "response": []
+                }
+              ],
+              "description": "## This folder documents the correct usage of authentication APIs and showcases their successful response flows."
+            },
+            {
+              "name": "failed runs",
+              "item": [
+                {
+                  "name": "Login Admin -failed",
+                  "event": [
+                    {
+                      "listen": "test",
+                      "script": {
+                        "exec": [
+                          "pm.test(\"Status code is 200\", function () {",
+                          "    pm.response.to.have.status(200);",
+                          "});",
+                          "var jsonData = pm.response.json();",
+                          "if (jsonData.token) {",
+                          "    pm.environment.set(\"admin_token\", jsonData.token);",
+                          "}"
+                        ],
+                        "type": "text/javascript"
+                      }
+                    }
+                  ],
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n    \"username\": \"admin\",\n    \"password\": \"admin123\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{base_url}}/api/v1/admin/login",
+                      "host": [
+                        "{{base_url}}"
+                      ],
+                      "path": [
+                        "api",
+                        "v1",
+                        "admin",
+                        "login"
+                      ]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Login Public -failed",
+                  "event": [
+                    {
+                      "listen": "test",
+                      "script": {
+                        "exec": [
+                          "pm.test(\"Status code is 200\", function () {",
+                          "    pm.response.to.have.status(200);",
+                          "});",
+                          "var jsonData = pm.response.json();",
+                          "if (jsonData.token) {",
+                          "    pm.environment.set(\"public_token\", jsonData.token);",
+                          "}"
+                        ],
+                        "type": "text/javascript"
+                      }
+                    }
+                  ],
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n    \"email\": \"test@example.com\",\n    \"password\": \"password123\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{base_url}}/api/v1/public/login",
+                      "host": [
+                        "{{base_url}}"
+                      ],
+                      "path": [
+                        "api",
+                        "v1",
+                        "public",
+                        "login"
+                      ]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Register Public User -failed",
+                  "event": [
+                    {
+                      "listen": "test",
+                      "script": {
+                        "exec": [
+                          "pm.test(\"Status code is 201\", function () {",
+                          "    pm.response.to.have.status(201);",
+                          "});",
+                          "var jsonData = pm.response.json();",
+                          "pm.test(\"Token is present\", function () {",
+                          "    pm.expect(jsonData.token).to.not.be.undefined;",
+                          "});",
+                          "if (jsonData.token) {",
+                          "    pm.environment.set(\"public_token\", jsonData.token);",
+                          "}"
+                        ],
+                        "type": "text/javascript"
+                      }
+                    }
+                  ],
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n    \"name\": \"Test User\",\n    \"email\": \"test{{$randomInt}}@example.com\",\n    \"password\": \"password123\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{base_url}}/api/v1/auth/register",
+                      "host": [
+                        "{{base_url}}"
+                      ],
+                      "path": [
+                        "api",
+                        "v1",
+                        "auth",
+                        "register"
+                      ]
+                    }
+                  },
+                  "response": []
+                }
+              ],
+              "description": "StartFragment\n\n### Failed Requests & Edge Case Behavior\n\nThe API follows consistent error handling across all routes. Below are common failure scenarios and how the system responds.\n\nThese below are some of the failures.\n\n#### Validation Failures\n\n- **400 Bad Request**  \n    Returned when required fields are missing, invalid, or improperly formatted (e.g., empty password, invalid email).\n    \n\n#### Authentication Failures\n\n- **401 Unauthorized**  \n    Returned when:\n    \n    - JWT token is missing or expired\n        \n    - Invalid credentials are provided during login\n        \n\n#### Authorization & Access Control\n\n- **403 Forbidden**  \n    Returned when a user attempts an action not permitted by their role or tries to access resources they do not own.\n    \n\n#### Duplicate or Conflicting Operations\n\n- **409 Conflict**  \n      \n    Returned when:\n    \n    - Registering with an email that already exists\n        \n    - Adding the same audit to a shelf more than once\n        \n\n#### Rate Limiting\n\n- **429 Too Many Requests**  \n    Returned when request limits are exceeded, such as repeated failed login attempts within a short time window.\n    \n\n#### Resource Not Found\n\n- **404 Not Found**  \n    Returned when a requested resource does not exist or has been deactivated.\n    \n\n#### Server Errors\n\n- **500 Internal Server Error**  \n    Returned for unexpected failures. These errors are logged internally using immutable server logs for auditing and troubleshooting.\n    \n\nEndFragment"
+            }
+          ],
+          "description": "### This folder contains both successful and failed runs of the authentication API endpoints."
+        }
+      ],
+      "description": "# Government Audit Listing API (v1)\n\nThis API provides role-based access to government audit listings.\n\n## Roles\n\n- Public: Register, login, view audits, manage shelf\n    \n- Accountant: Create and update own audits\n    \n- Admin: Manage accountants, audits, shelves, and system logs\n    \n\n## Authentication\n\nAll protected routes require a JWT token:  \nAuthorization: Bearer\n\n## API Versioning\n\nAll APIs are versioned under:  \n`/api/v1`\n\nEndFragment",
+      "auth": {
+        "type": "noauth"
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {},
+            "exec": [
+              ""
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {},
+            "exec": [
+              ""
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Roles",
+      "item": [
+        {
+          "name": "Admin",
+          "item": [
+            {
+              "name": "Create Accountant",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Status code is 201\", function () {",
+                      "    pm.response.to.have.status(201);",
+                      "});",
+                      "var jsonData = pm.response.json();",
+                      "pm.environment.set(\"accountant_username\", jsonData.data.username);"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{admin_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"username\": \"acc_{{$randomInt}}\",\n    \"password\": \"password123\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/v1/admin/accountants",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "admin",
+                    "accountants"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Get System Logs",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{admin_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/v1/admin/logs",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "admin",
+                    "logs"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Get Admin Audits",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{admin_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/v1/admin/audits",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "admin",
+                    "audits"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Delete admin audits",
+              "request": {
+                "method": "GET",
+                "header": []
+              },
+              "response": []
+            }
+          ],
+          "description": "## Administrator APIs\n\nAdministrators have full system oversight and control.\n\n- `POST /api/v1/admin/login`  \n    Authenticate and receive a JWT (valid for 10 minutes).\n    \n- `POST /api/v1/admin/accountants`  \n    Create a new accountant account.\n    \n- `PATCH /api/v1/admin/accountants/:id/password`  \n    Reset an accountant’s password.\n    \n- `GET /api/v1/admin/audits`  \n    View all audits, including inactive ones.\n    \n- `DELETE /api/v1/admin/audits/:id`  \n    Soft-delete an audit record.\n    \n- `GET /api/v1/admin/logs`  \n    View immutable system activity logs.",
+          "auth": {
+            "type": "bearer",
+            "bearer": [
+              {
+                "key": "token",
+                "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImFkbWluLWlkIiwicm9sZSI6ImFkbWluIiwiaWF0IjoxNzcwODg5NzQyLCJleHAiOjE3NzA4OTA2NDJ9.ezd3M6lBAhFk1QdUyUWgB7yAqwkdTHTFbeaxtwZH3H4",
+                "type": "string"
+              }
+            ]
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  ""
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Accountant",
+          "item": [
+            {
+              "name": "Login Accountant",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Status code is 200\", function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "var jsonData = pm.response.json();",
+                      "if (jsonData.token) {",
+                      "    pm.environment.set(\"accountant_token\", jsonData.token);",
+                      "}"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"username\": \"{{accountant_username}}\",\n    \"password\": \"password123\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/v1/accountant/login",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "accountant",
+                    "login"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Create Audit",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Status code is 201\", function () {",
+                      "    pm.response.to.have.status(201);",
+                      "});",
+                      "var jsonData = pm.response.json();",
+                      "pm.environment.set(\"audit_id\", jsonData.data._id);"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{accountant_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"title\": \"Q1 Financial Audit\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/v1/accountant/audits",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "accountant",
+                    "audits"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Get Own Audits",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{accountant_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/v1/accountant/audits",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "accountant",
+                    "audits"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Update existing audits",
+              "request": {
+                "method": "GET",
+                "header": []
+              },
+              "response": []
+            }
+          ],
+          "description": "## Accountant APIs\n\nAccountants can authenticate using admin-provided credentials and manage audits they create.\n\n- `POST /api/v1/accountant/login`  \n    Authenticate and receive a JWT (valid for 15 minutes).\n    \n- `POST /api/v1/accountant/audits`  \n    Create a new audit record.\n    \n- `GET /api/v1/accountant/audits`  \n    View audits created by the logged-in accountant.\n    \n- `PATCH /api/v1/accountant/audits/:id`  \n    Update an audit created by the accountant.\n    \n\n_Accountants can update only audits they created. Unauthorized updates return_ `_403 Forbidden_`_._",
+          "auth": {
+            "type": "bearer",
+            "bearer": [
+              {
+                "key": "token",
+                "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5OGQ2YTFhOTA1ZTY1MjQxM2VlMDNmZiIsInJvbGUiOiJhY2NvdW50YW50IiwidmVyc2lvbiI6MCwiaWF0IjoxNzcwODc3NDI2LCJleHAiOjE3NzA4NzgwMjZ9.FLwNnybi-qPIqzYLxp1xh94PwBVweay2N9Bp29qwlok",
+                "type": "string"
+              }
+            ]
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  ""
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Public",
+          "item": [
+            {
+              "name": "Get All Audits",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{public_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/v1/public/audits",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "public",
+                    "audits"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Add to Shelf",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{public_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/v1/public/shelf/{{audit_id}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "public",
+                    "shelf",
+                    "{{audit_id}}"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Get Shelf",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{public_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/v1/public/shelf",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "public",
+                    "shelf"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Delete from shelf",
+              "request": {
+                "method": "GET",
+                "header": []
+              },
+              "response": []
+            }
+          ],
+          "description": "## Public User APIs\n\nPublic users can register, authenticate, browse audits, and manage a personal audit shelf.\n\n- `POST /api/v1/public/register`  \n    Create a new public user account.\n    \n- `POST /api/v1/public/login`  \n    Authenticate and receive a JWT (Refresh Token + Access Token).\n    \n- `GET /api/v1/public/audits`  \n    Retrieve all active audits.\n    \n- `GET /api/v1/public/shelf`  \n    View audits added to the user’s shelf.\n    \n- `POST /api/v1/public/shelf/:auditId`  \n    Add an audit to the shelf.\n    \n- `DELETE /api/v1/public/shelf/:auditId`  \n    Remove an audit from the shelf.",
+          "auth": {
+            "type": "bearer",
+            "bearer": [
+              {
+                "key": "token",
+                "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5OGQ1NmU3ZWI2MmY0Mjk3YmQ5MWU4ZCIsInJvbGUiOiJwdWJsaWMiLCJpYXQiOjE3NzA4NzYwMjAsImV4cCI6MTc3MDg3NzgyMH0.Dfbgzbtr6vnxmSlSvwYzRt9NvaE2Ogtwj27SsopY2-o",
+                "type": "string"
+              }
+            ]
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  ""
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  ""
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Access Token cases",
+          "item": [
+            {
+              "name": "refresh-token of admin",
+              "request": {
+                "method": "GET",
+                "header": []
+              },
+              "response": []
+            },
+            {
+              "name": "refresh-token of accountant",
+              "request": {
+                "method": "GET",
+                "header": []
+              },
+              "response": []
+            }
+          ],
+          "description": "The API uses a **dual-token authentication model** for Public users (Access + Refresh tokens) and **stateless JWT authentication** for internal roles (Accountant and Administrator).\n\n### Token Format\n\n- **Type:** Bearer Token\n    \n- **Header:** `Authorization: Bearer`\n    \n\n### Token Lifetimes\n\n| Role | Access Token | Refresh Token | Rotation |\n| --- | --- | --- | --- |\n| Public User | 15 minutes | 7 days | Enabled |\n| Accountant | 15 minutes | Not used | N/A |\n| Administrator | 10 minutes | Not used | N/A |\n\n---\n\n## Access Token Failure Scenarios\n\n### Missing Token\n\nReturned when a protected route is accessed without an `Authorization` header.\n\n- **Response:** `401 Unauthorized`\n    \n- **Message:** `Not authorized, no token`\n    \n\n### Expired Token\n\nReturned when the access token has exceeded its expiry time.\n\n- **Response:** `401 Unauthorized`\n    \n- **Message:** `Your token has expired. Please log in again.`\n    \n\n**Behavior**\n\n- Public users should request a new token using the refresh endpoint\n    \n- Internal roles must re-authenticate\n    \n\n### Invalid or Malformed Token\n\nReturned when the token is tampered with or not a valid JWT.\n\n- **Response:** `401 Unauthorized`\n    \n- **Message:** `Invalid token. Please log in again.`\n    \n\n---\n\n## Refresh Token Failure Scenarios (Public Users Only)\n\n### Invalid or Reused Refresh Token\n\nOccurs when a refresh token is malformed, reused, or does not match the stored token.\n\n- **Response:** `401 Unauthorized`\n    \n- **Message:** `Invalid Refresh Token`\n    \n\n**Action:** User must be logged out and re-authenticate.\n\n### Expired Refresh Token\n\nOccurs when the refresh token has exceeded its validity period.\n\n- **Response:** `401 Unauthorized`\n    \n- **Message:** `Invalid/Expired Refresh Token`\n    \n\n**Action:** User must log in again using credentials.\n\n---\n\n### Insufficient Permissions\n\nOccurs when a valid token is used for an action outside the user’s role.\n\n- **Response:** `403 Forbidden`\n    \n- **Message:** `You do not have permission to perform this action`"
+        }
+      ],
+      "description": "This folder contains the API endpoints grouped by user roles in the system.\n\n## Public User\n\n**Role:** Citizens who can browse audits and manage a personal audit shelf.\n\n**Available Endpoints**\n\n- `POST /api/v1/public/register` – Register a new public user account\n    \n- `POST /api/v1/public/login` – Authenticate and receive a JWT (Refresh Token + Access Token)\n    \n- `GET /api/v1/public/audits` – View all active audits\n    \n- `GET /api/v1/public/shelf` – View bookmarked audits\n    \n- `POST /api/v1/public/shelf/:auditId` – Add an audit to the shelf\n    \n- `DELETE /api/v1/public/shelf/:auditId` – Remove an audit from the shelf\n    \n\n---\n\n## Accountant\n\n**Role:** Professionals responsible for creating and managing audit records.\n\n**Available Endpoints**\n\n- `POST /api/v1/accountant/login` – Authenticate and receive a JWT (valid for 15 minutes)\n    \n- `POST /api/v1/accountant/audits` – Create a new audit\n    \n- `GET /api/v1/accountant/audits` – View audits created by the logged-in accountant\n    \n- `PATCH /api/v1/accountant/audits/:id` – Update an audit created by the accountant\n    \n\n**Note:**  \nAccountants can only update audits they created. Attempts to modify other audits return `403 Forbidden`.\n\n---\n\n## Administrator\n\n**Role:** System administrators with full access and oversight.\n\n**Available Endpoints**\n\n- `POST /api/v1/admin/login` – Authenticate and receive a JWT (valid for 10 minutes)\n    \n- `POST /api/v1/admin/accountants` – Create a new accountant account\n    \n- `PATCH /api/v1/admin/accountants/:id/password` – Reset an accountant’s password\n    \n- `GET /api/v1/admin/audits` – View all audits (active and inactive)\n    \n- `DELETE /api/v1/admin/audits/:id` – Soft-delete an audit\n    \n- `GET /api/v1/admin/logs` – View immutable system activity logs\n    \n\n---\n\nAll endpoints follow REST principles and are versioned under `/api/v1/`.The `/collections` endpoints let you manage your [collections](https://learning.postman.com/docs/sending-requests/intro-to-collections/)."
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "https://farming-simulator.pstmn.io"
+    }
+  ]
+}

@@ -9,5 +9,3 @@ backend/logs/
 frontend/.env
 frontend/dist/
 frontend/.vite/
-coverage/
-.DS_Store
